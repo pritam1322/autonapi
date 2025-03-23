@@ -1,0 +1,110 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  PROVIDER
+  CONSUMER
+}
+
+model User {
+  id                String         @id @default(uuid())
+  email             String         @unique
+  password          String?
+  name              String?
+  image             String?
+  role              Role           @default(CONSUMER) // Default role is CONSUMER
+  emailVerified     DateTime?      @map(name: "email_verified")
+  gmailAccessToken  String?
+  gmailRefreshToken String?
+  Account           Account[]
+  createdAt         DateTime       @default(now())
+  API               API[]
+  Subscription      Subscription[]
+}
+
+model Account {
+  id                String  @id @default(uuid())
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  userId            String  @unique //Changed to Int to match User ID type
+  user              User    @relation(fields: [userId], references: [id]) // Relation to User model
+
+  @@unique([provider, providerAccountId]) // Composite key for provider and account ID
+  @@index([userId])
+}
+
+model API {
+  id           String         @id @default(uuid())
+  name         String
+  description  String
+  endpoint     String         @unique
+  authType     String // e.g., API Key, OAuth, None
+  pricing      String // e.g., Free, Pay-per-Request, Subscription
+  usageLimits  UsageLimit[]   // New: Define usage limits per plan
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  providerId   String
+  provider     User           @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  Subscription Subscription[]
+}
+
+model UsageLimit {
+  id        String      @id @default(uuid())
+  apiId     String
+  plan      PricingPlan
+  limit     Int? // Null means unlimited usage
+  api       API        @relation(fields: [apiId], references: [id], onDelete: Cascade)
+
+  @@unique([apiId, plan]) // Ensure unique usage limit per plan
+}
+
+model Subscription {
+  id         String             @id @default(uuid())
+  userId     String
+  apiId      String
+  status     SubscriptionStatus @default(ACTIVE)
+  plan       PricingPlan
+  apiKey     String             @unique
+  usageLimit Int?               // Selected at time of subscription
+  renewsAt   DateTime           // Next billing date
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  api  API  @relation(fields: [apiId], references: [id], onDelete: Cascade)
+}
+
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  EXPIRED
+  PENDING
+}
+
+enum PricingPlan {
+  FREE
+  PAY_PER_REQUEST
+  SUBSCRIPTION
+}
