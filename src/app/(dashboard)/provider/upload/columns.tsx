@@ -9,10 +9,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Button } from "@/components/ui/Button";
+
 import { MoreHorizontal } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { trpc } from "@/trpc-client/client";
+import { Button } from "@/components/ui/button";
 
 export type API = {
   id: string;
