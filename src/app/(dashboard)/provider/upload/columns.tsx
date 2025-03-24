@@ -19,6 +19,8 @@ export type API = {
   name: string;
   description: string;
   endpoint: string;
+  authType: string;
+  pricePerRequest: number | null;
   onUpdateAPI?: (api: API) => void;
   onDeleteJob?: (api: API) => void; // change this to onDeleteAPI
   onSubscribeAPI?: (api: API) => void;
@@ -32,10 +34,27 @@ export const columns: ColumnDef<API>[] = [
   {
     accessorKey: "description",
     header: "Description",
+    cell: ({ row }) => {
+      return <div className="w-72 text-wrap">{row.getValue("description")}</div>
+    }
+  },
+  {
+    accessorKey: "authType",
+    header: "AuthType",
+    cell: ({ row }) => {
+      return <div className="capitalize">{row.getValue("authType")}</div>
+    }
   },
   {
     accessorKey: "endpoint",
     header: "Endpoint",
+  },
+  {
+    accessorKey: "pricePerRequest",
+    header: "Price Per Request",
+    cell: ({ row }) => {
+      return <div className="text-center mr-2">$ {row.getValue("pricePerRequest")}</div>
+    }
   },
   {
     accessorKey: "id",

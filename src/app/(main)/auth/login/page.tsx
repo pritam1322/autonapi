@@ -78,8 +78,8 @@ export default function LoginPage() {
     }
 
     const handleAutofillEmailPassword = () => {
-        form.setValue("email", "teamfree@example.com");
-        form.setValue("password", "teamfree");
+        form.setValue("email", "free@example.com");
+        form.setValue("password", "free123");
     }
 
     return (

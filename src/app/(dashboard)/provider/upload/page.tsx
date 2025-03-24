@@ -8,6 +8,8 @@ import React, { useState, useEffect } from "react";
 import { UpdateAPI } from "@/components/dashboard/UpdateAPI";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CreateAPI } from "@/components/dashboard/CreateApi";
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 
 export default function UploadAPI() {
   const { data: session } = useSession();
@@ -15,9 +17,12 @@ export default function UploadAPI() {
   const [openSubcribeAPI, setOpenSubcribeAPI] = useState(false);
   const [filteredApis, setFilteredApis] = useState<API[]>([]);
   const [apiId, setApiId] = useState("");
-
+  const router = useRouter();
   const userId = session?.user?.id;
   
+
+  const { data: user } = trpc.getuser.useQuery({ id : session?.user.id! });
+
   // Prevent API query if userId is undefined
   const { data: apis, isLoading, error, refetch  } = trpc.getAPIs.useQuery(
     { providerId: userId! },
@@ -38,6 +43,8 @@ export default function UploadAPI() {
       name: api.name,
       description: api.description,
       endpoint: api.endpoint,
+      pricePerRequest: Number(api.pricePerRequest),
+      authType: api.authType,
       onUpdateAPI: () => handleApiUpdate(api),
       onDeleteJob: () => handleApiDelete(api.id),
       onSubscribeAPI: () => handleApiSubscribe(api)
@@ -68,7 +75,14 @@ export default function UploadAPI() {
     setApiId(api.id);
   }
 
-  if (!userId) return <p>Loading user session...</p>;
+  if( user && user.role !== "PROVIDER"){
+    return (
+      <div>
+        <p>Only providers can create APIs.</p>
+        <Button className="my-2" onClick={() => router.push('/consumer/dashboard')}>Dashboard</Button>
+      </div>
+    );
+  }
   if (isLoading) return <p>Loading...</p>;
   if (error) return <p>Error fetching APIs: {error.message}</p>;
 

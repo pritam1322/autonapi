@@ -15,30 +15,39 @@ export const appRouter = router({
         name: z.string().min(3, "API Name must be at least 3 characters."),
         description: z.string().min(10, "Description must be at least 10 characters."),
         endpoint: z.string().url("Enter a valid API endpoint."),
-        authType: z.enum(["API Key", "OAuth", "None"]),
-        pricing: z.enum(["FREE", "PAY_PER_REQUEST", "SUBSCRIPTION"]), // Updated to match the PricingPlan Enum
+        authType: z.enum(["API_KEY", "OAUTH", "NONE"]),
+        pricing: z.enum(["FREE", "PAY_PER_REQUEST", "SUBSCRIPTION"]),
         providerId: z.string(),
         usageLimit: z.number().int().positive("Usage limit must be positive"),
+        pricePerRequest: z.number().positive().optional(), // Optional for PAY_PER_REQUEST
+        monthlyPrice: z.number().positive().optional(), // Optional for SUBSCRIPTION
+        monthlyLimit: z.number().int().positive().optional(), // Optional for SUBSCRIPTION
       })
     )
     .mutation(async ({ input }) => {
       try {
+
+        // 🔹 Create API Entry
         const newAPI = await prisma.aPI.create({
           data: {
             name: input.name,
             description: input.description,
             endpoint: input.endpoint,
             authType: input.authType,
-            pricing: input.pricing, // Now consistent with PricingPlan
+            pricing: input.pricing,
             providerId: input.providerId,
+            pricePerRequest: input.pricePerRequest ?? null, // Ensures proper handling of optional fields
+            monthlyPrice: input.monthlyPrice ?? null,
+            monthlyLimit: input.monthlyLimit ?? null,
           },
         });
 
+        // 🔹 Create Usage Limit Entry
         await prisma.usageLimit.create({
           data: {
             apiId: newAPI.id,
-            plan: input.pricing as PricingPlan, // Ensures pricing and plan are consistent
-            limit: input.usageLimit,
+            plan: input.pricing as PricingPlan,
+            limit: input.usageLimit, // Dynamically set limit
           },
         });
 
@@ -50,52 +59,76 @@ export const appRouter = router({
     }),
 
 
+
+
     // Update API
     updateAPI: publicProcedure
     .input(
-        z.object({
-            id: z.string(),
-            name: z.string().min(3, "API Name must be at least 3 characters."),
-            description: z.string().min(10, "Description must be at least 10 characters."),
-            endpoint: z.string().url("Enter a valid API endpoint."),
-            authType: z.enum(["API Key", "OAuth", "None"]),
-            pricing: z.enum(["Free", "Pay-per-Request", "Subscription"]),
-            providerId: z.string(),
-        })
+      z.object({
+        id: z.string(),
+        name: z.string().min(3, "API Name must be at least 3 characters."),
+        description: z.string().min(10, "Description must be at least 10 characters."),
+        endpoint: z.string().url("Enter a valid API endpoint."),
+        authType: z.enum(["API_KEY", "OAUTH", "NONE"]),
+        pricing: z.enum(["FREE", "PAY_PER_REQUEST", "SUBSCRIPTION"]),
+        providerId: z.string(),
+        pricePerRequest: z.number().optional(),  // String input
+        monthlyPrice: z.number().optional(),  // String input
+        monthlyLimit: z.number().optional(),  // String input
+        usageLimit: z.number().optional(),  // String input
+      })
     )
     .mutation(async ({ input }) => {
-        try {
-            // Check if API exists and belongs to the provider
-            const existingAPI = await prisma.aPI.findUnique({
-                where: { id: input.id },
-            });
+      try {
+        // Check if API exists and belongs to the provider
+        const existingAPI = await prisma.aPI.findUnique({
+          where: { id: input.id },
+        });
 
-            if (!existingAPI) {
-                throw new Error("API not found.");
-            }
-
-            if (existingAPI.providerId !== input.providerId) {
-                throw new Error("Unauthorized: You can only update your own APIs.");
-            }
-
-            // Update the API
-            const updatedAPI = await prisma.aPI.update({
-                where: { id: input.id },
-                data: {
-                    name: input.name,
-                    description: input.description,
-                    endpoint: input.endpoint,
-                    authType: input.authType,
-                    pricing: input.pricing,
-                },
-            });
-
-            return { success: true, data: updatedAPI };
-        } catch (error) {
-            console.error("Error updating API:", error);
-            throw new Error("Failed to update API. Please try again.");
+        if (!existingAPI) {
+          throw new Error("API not found.");
         }
+
+        if (existingAPI.providerId !== input.providerId) {
+          throw new Error("Unauthorized: You can only update your own APIs.");
+        }
+
+        // Update the API
+        const updatedAPI = await prisma.aPI.update({
+          where: { id: input.id },
+          data: {
+            name: input.name,
+            description: input.description,
+            endpoint: input.endpoint,
+            authType: input.authType ,
+            pricing: input.pricing as PricingPlan,
+            pricePerRequest: input.pricePerRequest!, // Convert to number
+            monthlyPrice: input.monthlyPrice!, // Convert to number
+            monthlyLimit: input.monthlyLimit!, // Convert to number
+          },
+        });
+
+        await prisma.usageLimit.update({
+          where: { 
+            apiId_plan: {  
+              apiId: updatedAPI.id,
+              plan: input.pricing as PricingPlan, // Ensure you are using the correct plan
+            },
+          },
+          data: {
+            limit: input.usageLimit, // Dynamically update limit
+          },
+        });
+        
+
+        return { success: true, data: updatedAPI };
+      } catch (error) {
+        console.error("Error updating API:", error);
+        throw new Error("Failed to update API. Please try again.");
+      }
     }),
+
+
 
 
     // get user by id
@@ -124,7 +157,6 @@ export const appRouter = router({
       });
     }),
 
-    // getAPI
     getAPIById: publicProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ input }) => {
@@ -132,14 +164,26 @@ export const appRouter = router({
         where: { id: input.id },
       });
 
-      if(!api) throw new Error("Failed to fetch APIs. Please try again.");
+      if (!api) throw new Error("Failed to fetch APIs. Please try again.");
+
+      // Normalize API response
+      const validAuthTypes = ["API_KEY", "OAUTH", "NONE"] as const;
+      const validPricingPlans = ["FREE", "PAY_PER_REQUEST", "SUBSCRIPTION"] as const;
 
       return {
         ...api,
-        authType: api.authType as "API Key" | "OAuth" | "None",
-        pricing: api.pricing as "Free" | "Pay-per-Request" | "Subscription",
+        authType: validAuthTypes.includes(api.authType as any)
+          ? (api.authType as "API_KEY" | "OAUTH" | "NONE")
+          : "NONE",
+        pricing: validPricingPlans.includes(api.pricing as any)
+          ? (api.pricing as "FREE" | "PAY_PER_REQUEST" | "SUBSCRIPTION")
+          : "FREE",
+        pricePerRequest: api.pricePerRequest ?? undefined,
+        monthlyPrice: api.monthlyPrice ?? undefined,
+        monthlyLimit: api.monthlyLimit ?? undefined,
       };
     }),
+
 
     deleteAPI: publicProcedure
     .input(
@@ -169,6 +213,27 @@ export const appRouter = router({
       } catch (error) {
         throw new Error(`Error deleting API: ${error}`);
       }
+    }),
+
+    getUsageLimit: publicProcedure
+    .input(
+      z.object({
+        apiId: z.string(),
+      })
+    )
+    .query(async ({ input }) => {
+      const usageLimit = await prisma.usageLimit.findFirst({
+        where: { apiId: input.apiId },
+      });
+
+      if (!usageLimit) {
+        throw new Error("usageLimit not found");
+      }
+
+      return { 
+        ...usageLimit,
+        limit: usageLimit.limit ?? undefined
+       };
     }),
 });
 

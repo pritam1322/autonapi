@@ -75,7 +75,7 @@ export default function SignUp() {
           headers: {
               "Content-Type": "application/json",
           },
-          body: JSON.stringify({ email:values.email, password: hashedPassword, name: values.name, usertype: values.role }),
+          body: JSON.stringify({ email:values.email, password: hashedPassword, name: values.name, role: values.role }),
       });
 
       if (res.ok) {
