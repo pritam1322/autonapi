@@ -2,7 +2,7 @@
 
 import { trpc } from "@/trpc-client/client";
 import { useSession } from "next-auth/react";
-import { API, columns } from "./columns";
+import { API, createColumns } from "./columns";
 import { DataTable } from "./data-table"; 
 import React, { useState, useEffect } from "react";
 import { UpdateAPI } from "@/components/dashboard/UpdateAPI";
@@ -14,15 +14,20 @@ import { useRouter } from "next/navigation";
 export default function UploadAPI() {
   const { data: session } = useSession();
   const [updateapi, setUpdateapi] = useState(false);
-  const [openSubcribeAPI, setOpenSubcribeAPI] = useState(false);
+  //const [openSubcribeAPI, setOpenSubcribeAPI] = useState(false);
   const [filteredApis, setFilteredApis] = useState<API[]>([]);
   const [apiId, setApiId] = useState("");
   const router = useRouter();
   const userId = session?.user?.id;
   
 
-  const { data: user } = trpc.getuser.useQuery({ id : session?.user.id! });
+  const { data: user } = trpc.getuser.useQuery(
+    { id: session?.user?.id ?? "" }, // Provide a fallback empty string or undefined
+    { enabled: !!session?.user?.id } // Prevents execution if `session?.user.id` is undefined
+  );
 
+  const userRole = user?.role ? user.role.toString() :  null;
+  const columns = createColumns(userRole);
   // Prevent API query if userId is undefined
   const { data: apis, isLoading, error, refetch  } = trpc.getAPIs.useQuery(
     { providerId: userId! },
@@ -71,7 +76,7 @@ export default function UploadAPI() {
   };
 
   const handleApiSubscribe = async (api: API) => {
-    setOpenSubcribeAPI(true);
+    //setOpenSubcribeAPI(true);
     setApiId(api.id);
   }
 

@@ -5,7 +5,6 @@ import { ThemeProvider } from "@/components/wrappers/theme-provider";
 import { Provider } from "@/lib/reactQuery-provider";
 import SessionWrapper from "@/lib/SessionWrapper";
 import type { Metadata } from "next";
-import { useSession } from "next-auth/react";
 import { Toaster } from "sonner";
 
 import "./globals.css";
