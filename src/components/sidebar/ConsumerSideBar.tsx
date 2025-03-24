@@ -35,7 +35,11 @@ export function ConsumerSidebar() {
     const candidateName = session?.user?.name?.split(" ")[0] || "Username";
   
 
-    const { data: user } = trpc.getuser.useQuery({ id : session?.user.id! });
+    const { data: user } = trpc.getuser.useQuery(
+      { id: session?.user?.id ?? "" }, // Provide a fallback empty string or undefined
+      { enabled: !!session?.user?.id } // Prevents execution if `session?.user.id` is undefined
+    );
+    
 
     // Set menu based on role
     const menuItems = user?.role === "PROVIDER" ? providerItems : consumerItems;

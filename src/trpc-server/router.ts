@@ -7,6 +7,13 @@ import { publicProcedure, router } from ".";
 
 const prisma = new PrismaClient();
 
+// Define valid types
+const validAuthTypes = ["API_KEY", "OAUTH", "NONE"] as const;
+type AuthType = (typeof validAuthTypes)[number];
+
+const validPricingPlans = ["FREE", "PAY_PER_REQUEST", "SUBSCRIPTION"] as const;
+type PricingPlans = (typeof validPricingPlans)[number];
+
 export const appRouter = router({
     // create API router
     createAPI: publicProcedure
@@ -158,31 +165,27 @@ export const appRouter = router({
     }),
 
     getAPIById: publicProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ input }) => {
-      const api = await prisma.aPI.findUnique({
-        where: { id: input.id },
-      });
+  .input(z.object({ id: z.string() }))
+  .query(async ({ input }) => {
+    const api = await prisma.aPI.findUnique({
+      where: { id: input.id },
+    });
 
-      if (!api) throw new Error("Failed to fetch APIs. Please try again.");
+    if (!api) throw new Error("Failed to fetch APIs. Please try again.");
 
-      // Normalize API response
-      const validAuthTypes = ["API_KEY", "OAUTH", "NONE"] as const;
-      const validPricingPlans = ["FREE", "PAY_PER_REQUEST", "SUBSCRIPTION"] as const;
-
-      return {
-        ...api,
-        authType: validAuthTypes.includes(api.authType as any)
-          ? (api.authType as "API_KEY" | "OAUTH" | "NONE")
-          : "NONE",
-        pricing: validPricingPlans.includes(api.pricing as any)
-          ? (api.pricing as "FREE" | "PAY_PER_REQUEST" | "SUBSCRIPTION")
-          : "FREE",
-        pricePerRequest: api.pricePerRequest ?? undefined,
-        monthlyPrice: api.monthlyPrice ?? undefined,
-        monthlyLimit: api.monthlyLimit ?? undefined,
-      };
-    }),
+    return {
+      ...api,
+      authType: validAuthTypes.includes(api.authType as AuthType)
+        ? (api.authType as AuthType)
+        : "NONE",
+      pricing: validPricingPlans.includes(api.pricing as PricingPlan)
+        ? (api.pricing as PricingPlans)
+        : "FREE",
+      pricePerRequest: api.pricePerRequest ?? undefined,
+      monthlyPrice: api.monthlyPrice ?? undefined,
+      monthlyLimit: api.monthlyLimit ?? undefined,
+    };
+  }),
 
 
     deleteAPI: publicProcedure

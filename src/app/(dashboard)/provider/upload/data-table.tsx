@@ -21,7 +21,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { useRouter } from "next/navigation"
 import { Input } from "@/components/ui/input"
 
 interface DataTableProps<TData, TValue> {
@@ -37,7 +36,6 @@ export function DataTable<TData, TValue>({
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   )
-  const router = useRouter();
   const table = useReactTable({
     data,
     columns,

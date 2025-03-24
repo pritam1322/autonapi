@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     const cacheKey = `user:${email}`;
 
     // Check Redis cache first
-    let cachedUser = await redis.get(cacheKey);
+    const cachedUser = await redis.get(cacheKey);
     if (cachedUser) {
         return NextResponse.json({ error: 'User already exists (from cache)' }, { status: 400 });
     }

@@ -3,17 +3,22 @@
 import { trpc } from "@/trpc-client/client";
 import { useSession } from "next-auth/react";
 import { useState, useEffect } from "react";
-import { API, columns } from "../../provider/upload/columns";
+import { API, createColumns } from "../../provider/upload/columns";
 import { DataTable } from "../../provider/upload/data-table";
 
 export default function UploadAPI() {
   const { data: session } = useSession();
   const userId = session?.user?.id || undefined;
-
+  const [filteredApis, setFilteredApis] = useState<API[]>([]);
   // Fetch APIs using tRPC
   const { data: apis, isLoading, error } = trpc.getAPIs.useQuery({});
-
-  const [filteredApis, setFilteredApis] = useState<API[]>([]);
+  const { data: user } = trpc.getuser.useQuery(
+    { id: session?.user?.id ?? "" }, // Provide a fallback empty string or undefined
+    { enabled: !!session?.user?.id } // Prevents execution if `session?.user.id` is undefined
+  );
+  
+  
+  const columns = createColumns(user?.role!);
 
   useEffect(() => {
     if (!apis) return;
@@ -30,6 +35,8 @@ export default function UploadAPI() {
     );
   }, [apis]);
 
+
+  if(!userId) return <div className="text-center text-gray-500">User not found</div>
   if (isLoading) return <p className="text-center text-gray-500">Loading...</p>;
   if (error)
     return (

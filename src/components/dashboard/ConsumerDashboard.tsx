@@ -15,7 +15,7 @@ export default function ConsumerDashboard(){
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                 <div>
                     <h1 className="text-2xl md:text-3xl font-bold text-slate-800 dark:text-white">Welcome, {session?.user.name?.split(" ")[0]}!</h1>
-                    <p className="mt-1 text-slate-500 dark:text-slate-400">Here's an overview of your API usage</p>
+                    <p className="mt-1 text-slate-500 dark:text-slate-400">Here&apos;s an overview of your API usage</p>
                 </div>
                 
                 {/* Dark Mode Toggle & Notifications */}
