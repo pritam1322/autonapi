@@ -95,27 +95,27 @@ const HeroSection = () => {
 
               <div className="mt-8 font-mono text-sm bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto">
                 {/* Quick integration example */}
-                <div className="text-gray-400">// Quick integration example</div>
+                <div className="text-gray-400">{`//`} Quick integration example</div>
                 <div className="mt-2">
                   <span className="text-purple-400">import</span>{" "}
                   <span className="text-white">{"{"} AutonAPI {"}"}</span>{" "}
                   <span className="text-purple-400">from</span>{" "}
-                  <span className="text-yellow-300">'@autonapi/client'</span>;
+                  <span className="text-yellow-300">&apos;@autonapi/client&apos;</span>;
                 </div>
                 <div className="mt-1">
                   <span className="text-blue-400">const</span> api ={" "}
                   <span className="text-purple-400">new</span>{" "}
                   <span className="text-white">AutonAPI</span>(
-                  <span className="text-yellow-300">'YOUR_API_KEY'</span>);
+                  <span className="text-yellow-300">&apos;YOUR_API_KEY&apos;</span>);
                 </div>
                 <div className="mt-1">
-                  <span className="text-green-400">// Connect to Vision API</span>
+                  <span className="text-green-400">{'//'} Connect to Vision API</span>
                 </div>
                 <div className="mt-1">
                   <span className="text-blue-400">const</span> vision ={" "}
                   <span className="text-purple-400">await</span> api.
                   <span className="text-white">connect</span>(
-                  <span className="text-yellow-300">'vision'</span>);
+                  <span className="text-yellow-300">&apos;vision&apos;</span>);
                 </div>
                 <div className="mt-1">
                   <span className="text-blue-400">const</span> result ={" "}

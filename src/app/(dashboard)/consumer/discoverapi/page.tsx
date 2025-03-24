@@ -18,7 +18,8 @@ export default function UploadAPI() {
   );
   
   
-  const columns = createColumns(user?.role!);
+  const userRole = user?.role ? user.role.toString() :  null;
+  const columns = createColumns(userRole);
 
   useEffect(() => {
     if (!apis) return;

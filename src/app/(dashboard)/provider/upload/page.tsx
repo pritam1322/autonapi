@@ -25,7 +25,9 @@ export default function UploadAPI() {
     { id: session?.user?.id ?? "" }, // Provide a fallback empty string or undefined
     { enabled: !!session?.user?.id } // Prevents execution if `session?.user.id` is undefined
   );
-  const columns = createColumns(user?.role!);
+
+  const userRole = user?.role ? user.role.toString() :  null;
+  const columns = createColumns(userRole);
   // Prevent API query if userId is undefined
   const { data: apis, isLoading, error, refetch  } = trpc.getAPIs.useQuery(
     { providerId: userId! },
