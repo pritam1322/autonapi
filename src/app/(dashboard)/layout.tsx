@@ -1,10 +1,11 @@
-import Headers from "@/components/landingpages/Headers";
+
 import { ConsumerSidebar } from "@/components/sidebar/ConsumerSideBar";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeProvider } from "@/components/wrappers/theme-provider";
 import { Provider } from "@/lib/reactQuery-provider";
 import SessionWrapper from "@/lib/SessionWrapper";
 import type { Metadata } from "next";
+import { useSession } from "next-auth/react";
 import { Toaster } from "sonner";
 
 import "./globals.css";
@@ -21,6 +22,8 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
@@ -35,8 +38,9 @@ export default function RootLayout({
               >
                 
                 <SidebarProvider>
+                  <div className="md:hidden"><SidebarTrigger /></div>
                   <ConsumerSidebar />
-                    <SidebarTrigger />
+                    <div className="hidden md:block"><SidebarTrigger /></div>
                     <div className="flex w-full mx-auto">
                       {children}
                     </div>

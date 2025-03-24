@@ -54,19 +54,23 @@ model Account {
 }
 
 model API {
-  id           String         @id @default(uuid())
-  name         String
-  description  String
-  endpoint     String         @unique
-  authType     String // e.g., API Key, OAuth, None
-  pricing      String // e.g., Free, Pay-per-Request, Subscription
-  usageLimits  UsageLimit[]   // New: Define usage limits per plan
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  providerId   String
-  provider     User           @relation(fields: [providerId], references: [id], onDelete: Cascade)
-  Subscription Subscription[]
+  id             String         @id @default(uuid())
+  name           String
+  description    String
+  endpoint       String         @unique
+  authType       AuthType         // e.g., API Key, OAuth, None
+  pricing        PricingPlan    // e.g., Free, Pay-per-Request, Subscription
+  pricePerRequest Float?        // Price per request (for PAY_PER_REQUEST plan)
+  monthlyPrice   Float?         // Monthly subscription price (for SUBSCRIPTION plan)
+  monthlyLimit   Int?           // Monthly usage limit (for SUBSCRIPTION plan)
+  usageLimits    UsageLimit[]   // Define usage limits per plan
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  providerId     String
+  provider       User           @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  Subscription   Subscription[]
 }
+
 
 model UsageLimit {
   id        String      @id @default(uuid())
@@ -107,4 +111,10 @@ enum PricingPlan {
   FREE
   PAY_PER_REQUEST
   SUBSCRIPTION
+}
+
+enum AuthType {
+  API_KEY
+  OAUTH
+  NONE
 }

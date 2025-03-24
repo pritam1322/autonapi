@@ -24,6 +24,8 @@ export default function UploadAPI() {
         name: api.name,
         description: api.description,
         endpoint: api.endpoint,
+        authType: api.authType,
+        pricePerRequest: api.pricePerRequest,
       }))
     );
   }, [apis]);
@@ -39,7 +41,7 @@ export default function UploadAPI() {
   return (
     <section className="w-full">
       {/* Heading & Subheading */}
-      <div className="container flex flex-col px-8 items-start gap-1 pt-8 md:py-10 lg:pt-12">
+      <div className="container flex flex-col items-start gap-1 pt-8 md:py-10 lg:pt-12">
         <h1 className="text-2xl font-bold leading-tight tracking-tighter sm:text-3xl md:text-4xl lg:leading-[1.1]">
           Manage Your APIs
         </h1>
@@ -49,7 +51,7 @@ export default function UploadAPI() {
       </div>
 
       {/* Data Table */}
-      <div className="p-6">
+      <div className="py-6">
         <DataTable columns={columns} data={filteredApis || []} />
       </div>
       
