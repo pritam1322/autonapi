@@ -12,8 +12,8 @@ declare module "next-auth" {
       role?: string | null | undefined;
       access_token?: string;
       refresh_token?: string; // Add the refresh_token to the JWT
-      gmailAccessToken?: string;
-      gmailRefreshToken?: string;
+      gmailAccessToken?: string| null | undefined;
+      gmailRefreshToken?: string| null | undefined;
     };
   }
 }
@@ -28,8 +28,8 @@ declare module "next-auth/jwt" {
       role?: string | null | undefined;
       access_token?: string;
       refresh_token?: string; // Add the refresh_token to the JWT
-      gmailAccessToken?: string;
-      gmailRefreshToken?: string;
+      gmailAccessToken?: string| null | undefined;
+      gmailRefreshToken?: string| null | undefined;
     };
     access_token?: string; // Add the access_token to the JWT
     refresh_token?: string; 
