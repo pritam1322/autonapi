@@ -21,8 +21,10 @@ export async function POST(request: Request) {
     });
 
     if (existingUser) {
+
+        const userData = { id: existingUser.id, email: existingUser.email, name: existingUser.name };
         // Store user in Redis for 1 hour
-        await redis.set(cacheKey, JSON.stringify(existingUser), "EX", 3600);
+        await redis.setex(cacheKey, 3600, JSON.stringify(userData)); // Upstash uses setex for expiry
         return NextResponse.json({ error: 'User already exists' }, { status: 400 });
     }
 
@@ -42,7 +44,7 @@ export async function POST(request: Request) {
 
     // Store new user in Redis for quick access (omit password)
     const userData = { id: user.id, email: user.email, name: user.name };
-    await redis.set(cacheKey, JSON.stringify(userData), "EX", 3600);
+    await redis.setex(cacheKey, 3600, JSON.stringify(userData)); // Upstash uses setex for expiry
 
     // Respond with the created user
     return NextResponse.json({ user: userData }, { status: 201 });

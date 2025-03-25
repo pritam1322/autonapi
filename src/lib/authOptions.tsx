@@ -10,21 +10,23 @@ import redis from "./redis";
 interface User {
   id: string;
   email: string;
-  name?: string;
-  image?: string;
-  role?: string;
-  gmailAccessToken?: string;
-  gmailRefreshToken?: string;
+  name?: string | null;  // Allow null values
+  image?: string | null;
+  role?: string | null;
+  password?: string | null;
+  gmailAccessToken?: string | null;
+  gmailRefreshToken?: string | null;
 }
+
 
 interface UserCache {
   id: string;
   email: string;
-  name?: string | null ;
-  image?: string | null | undefined;
-  role?: string | null | undefined;
-  gmailAccessToken?: string | null;
-  gmailRefreshToken?: string | null;
+  name?: string | null;
+  image?: string | null;
+  role?: string | null;
+  gmailAccessToken?: string | null | undefined;
+  gmailRefreshToken?: string | null | undefined;
 }
 
 const authOptions: NextAuthOptions = {
@@ -35,13 +37,6 @@ const authOptions: NextAuthOptions = {
       clientId: process.env.GOOGLE_CLIENT_ID as string,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
       allowDangerousEmailAccountLinking: true,
-      // authorization: {
-      //   params: {
-      //     scope: "openid profile email https://www.googleapis.com/auth/gmail.readonly",
-      //     access_type: "offline",
-      //     prompt: "consent",
-      //   },
-      // },
     }),
     CredentialsProvider({
       name: "Credentials",
@@ -56,24 +51,35 @@ const authOptions: NextAuthOptions = {
 
         const cacheKey = `user:${credentials.email}`;
         
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-        });
+        // Check Redis cache first
+        const cachedUser: string | null = await redis.get(cacheKey);
+        let user: User | null = cachedUser ? JSON.parse(cachedUser) : null;
+
+        if (!user) {
+          // Fetch user from database if not in cache
+          user = await prisma.user.findUnique({
+            where: { email: credentials.email },
+          });
+
+          if (user) {
+            // Store user in Redis (without password)
+            const userData = { id: user.id, email: user.email, name: user.name };
+            await redis.setex(cacheKey, 3600, JSON.stringify(userData)); // Upstash setex
+          }
+        }
 
         if (!user || !user.password) {
           console.error("No user found with the given email.");
           throw new Error("Invalid email or password.");
         }
 
-        await redis.set(cacheKey, JSON.stringify(user), "EX", 3600);
         const isValidPassword = bcrypt.compareSync(credentials.password, user.password);
-
         if (!isValidPassword) {
           console.error("Incorrect password.");
           throw new Error("Invalid email or password.");
         }
 
-        return { id: String(user.id), email: user.email, name: user.name };
+        return { id: user.id, email: user.email, name: user.name };
       },
     }),
   ],
@@ -85,20 +91,20 @@ const authOptions: NextAuthOptions = {
       const cacheKey = `user:${user.email}`;
       let currentUser: UserCache | null = null;
     
-      const cachedUser = await redis.get(cacheKey);
+      const cachedUser: string | null = await redis.get(cacheKey);
       if (cachedUser) {
         currentUser = JSON.parse(cachedUser) as UserCache;
       } else {
         currentUser = await prisma.user.findUnique({
           where: { email: user.email! },
-          select: { id: true, email: true },
+          select: { id: true, email: true, name: true },
         });
-    
+
         if (currentUser) {
-          await redis.set(cacheKey, JSON.stringify(currentUser), "EX", 3600);
+          await redis.setex(cacheKey, 3600, JSON.stringify(currentUser)); // Upstash setex
         }
       }
-    
+
       if (!currentUser && account?.provider === "google") {
         currentUser = await prisma.user.create({
           data: {
@@ -110,21 +116,19 @@ const authOptions: NextAuthOptions = {
             gmailRefreshToken: account.refresh_token,
           },
         });
+
+        // Cache the new user in Redis
+        await redis.setex(cacheKey, 3600, JSON.stringify(currentUser));
       }
-    
+
       if (!currentUser) {
         throw new Error("User not found. Please sign up first.");
       }
-    
-      // Ensure currentUser is of type UserCache before accessing id
-      if (typeof currentUser === "string") {
-        currentUser = JSON.parse(currentUser) as UserCache;
-      }
-    
+
       if (!currentUser.id) {
         throw new Error("User ID is missing.");
       }
-    
+
       if (account?.provider === "google") {
         await prisma.account.upsert({
           where: { userId: currentUser.id },
@@ -147,16 +151,16 @@ const authOptions: NextAuthOptions = {
           },
         });
       }
-    
+
       return true;
-    },    
+    },
     async jwt({ token, user, account }) {
       if (user) {
         token.user = {
           id: user.id,
           email: user.email,
           name: user.name,
-          role:(user as User).role,
+          role: (user as User).role,
         };
       }
 
@@ -169,7 +173,7 @@ const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (token.user) {
-        session.user = token.user as User;
+        session.user = token.user as UserCache;
         session.user.role = token.user.role as string;
       }
       if (token.access_token) {
