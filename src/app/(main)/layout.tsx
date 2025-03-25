@@ -4,6 +4,7 @@ import { Provider } from "@/lib/reactQuery-provider";
 import SessionWrapper from "@/lib/SessionWrapper";
 import type { Metadata } from "next";
 import { Toaster } from "sonner";
+import { Analytics } from '@vercel/analytics/next';
 
 import "./globals.css";
 
@@ -33,6 +34,7 @@ export default function RootLayout({
               >
                 
                 <Headers />
+                <Analytics />
                 {children}
               </ThemeProvider>
             </Provider>
